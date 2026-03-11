@@ -62,6 +62,11 @@ if uploaded_file is not None:
 
     st.dataframe(df.head())
 
+    # sample data to make it faster on streamlit cloud
+    if len(df) > 50000:
+        df = df.sample(50000, random_state=42)
+        st.write(f"Sampled 50000 rows for faster training")
+
     st.header("4. EDA")
     col1, col2 = st.columns(2)
 
@@ -110,17 +115,25 @@ if uploaded_file is not None:
     X_train_scaled = scaler.fit_transform(X_train)
     X_test_scaled = scaler.transform(X_test)
 
-    lr = LinearRegression()
-    lr.fit(X_train_scaled, y_train)
-    lr_pred = lr.predict(X_test_scaled)
+    st.write(f"Training: {X_train.shape[0]} | Testing: {X_test.shape[0]}")
 
-    rf = RandomForestRegressor(n_estimators=100, max_depth=15, random_state=42, n_jobs=-1)
-    rf.fit(X_train, y_train)
-    rf_pred = rf.predict(X_test)
+    with st.spinner("Training Linear Regression..."):
+        lr = LinearRegression()
+        lr.fit(X_train_scaled, y_train)
+        lr_pred = lr.predict(X_test_scaled)
+    st.write("Linear Regression trained")
 
-    xgb = XGBRegressor(n_estimators=200, max_depth=8, learning_rate=0.1, random_state=42, n_jobs=-1)
-    xgb.fit(X_train, y_train)
-    xgb_pred = xgb.predict(X_test)
+    with st.spinner("Training Random Forest..."):
+        rf = RandomForestRegressor(n_estimators=50, max_depth=10, random_state=42, n_jobs=-1)
+        rf.fit(X_train, y_train)
+        rf_pred = rf.predict(X_test)
+    st.write("Random Forest trained")
+
+    with st.spinner("Training XGBoost..."):
+        xgb = XGBRegressor(n_estimators=100, max_depth=6, learning_rate=0.1, random_state=42, n_jobs=-1)
+        xgb.fit(X_train, y_train)
+        xgb_pred = xgb.predict(X_test)
+    st.write("XGBoost trained")
 
     st.success("All models trained!")
 
