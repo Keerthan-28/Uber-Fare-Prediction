@@ -96,7 +96,7 @@ streamlit run app.py
 
 Deployed on Streamlit Cloud. Upload uber.csv on the app and it runs the full pipeline automatically.
 
-[Click here to open the app]([https://your-app-link.streamlit.app](https://uber-fare-prediction-bxnqxpt4ngddmhsazhcxec.streamlit.app/))
+[Click here to open the app](https://uber-fare-prediction-bxnqxpt4ngddmhsazhcxec.streamlit.app/)
 
 ## 📊 Results
 
