@@ -51,7 +51,7 @@ if uploaded_file is not None:
         return 6371 * c
 
     df['distance_km'] = haversine(df['pickup_latitude'], df['pickup_longitude'],
-                                   df['dropoff_latitude'], df['dropoff_longitude'])
+                                  df['dropoff_latitude'], df['dropoff_longitude'])
     df = df[(df['distance_km'] > 0) & (df['distance_km'] <= 200)]
 
     df['hour'] = df['pickup_datetime'].dt.hour
@@ -62,10 +62,9 @@ if uploaded_file is not None:
 
     st.dataframe(df.head())
 
-    # sample data to make it faster on streamlit cloud
     if len(df) > 50000:
         df = df.sample(50000, random_state=42)
-        st.write(f"Sampled 50000 rows for faster training")
+        st.write("Sampled 50000 rows for faster training")
 
     st.header("4. EDA")
     col1, col2 = st.columns(2)
@@ -98,7 +97,7 @@ if uploaded_file is not None:
         st.pyplot(fig4)
 
     fig5, ax5 = plt.subplots(figsize=(8, 6))
-    sns.heatmap(df[['fare_amount','passenger_count','distance_km','hour','day_of_week','month']].corr(),
+    sns.heatmap(df[['fare_amount', 'passenger_count', 'distance_km', 'hour', 'day_of_week', 'month']].corr(),
                 annot=True, cmap='coolwarm', fmt='.2f', ax=ax5)
     st.pyplot(fig5)
 
@@ -156,26 +155,6 @@ if uploaded_file is not None:
     best = results.loc[results['RMSE'].idxmin(), 'Model']
     st.success(f"Best Model: {best}")
 
-    col5, col6, col7 = st.columns(3)
-    with col5:
-        fig6, ax6 = plt.subplots()
-        ax6.bar(results['Model'], results['RMSE'], color=['steelblue', 'green', 'crimson'])
-        ax6.set_title('RMSE')
-        plt.xticks(rotation=45)
-        st.pyplot(fig6)
-    with col6:
-        fig7, ax7 = plt.subplots()
-        ax7.bar(results['Model'], results['MAE'], color=['steelblue', 'green', 'crimson'])
-        ax7.set_title('MAE')
-        plt.xticks(rotation=45)
-        st.pyplot(fig7)
-    with col7:
-        fig8, ax8 = plt.subplots()
-        ax8.bar(results['Model'], results['R2'], color=['steelblue', 'green', 'crimson'])
-        ax8.set_title('R2')
-        plt.xticks(rotation=45)
-        st.pyplot(fig8)
-
     st.header("7. Actual vs Predicted")
     col8, col9, col10 = st.columns(3)
     with col8:
@@ -211,6 +190,7 @@ if uploaded_file is not None:
         st.pyplot(fig13)
 
     st.header("9. Predict Fare")
+
     pcol1, pcol2 = st.columns(2)
     with pcol1:
         pickup_lat = st.number_input("Pickup Latitude", value=40.7128)
@@ -220,20 +200,31 @@ if uploaded_file is not None:
     with pcol2:
         passengers = st.slider("Passengers", 1, 6, 1)
         trip_hour = st.slider("Hour", 0, 23, 12)
-        trip_day = st.selectbox("Day", [0,1,2,3,4,5,6],
-                                format_func=lambda x: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'][x])
+        trip_day = st.selectbox("Day", [0, 1, 2, 3, 4, 5, 6],
+                                format_func=lambda x: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][x])
         trip_month = st.slider("Month", 1, 12, 6)
 
     if st.button("Predict"):
-        dist = haversine(pickup_lat, pickup_lon, dropoff_lat, dropoff_lon)
-        input_data = pd.DataFrame([[pickup_lat, pickup_lon, dropoff_lat, dropoff_lon,
-                                     passengers, dist, trip_hour, trip_day, trip_month]],
-                                   columns=features)
-        rcol1, rcol2, rcol3 = st.columns(3)
-        rcol1.metric("Linear Regression", f"${lr.predict(scaler.transform(input_data))[0]:.2f}")
-        rcol2.metric("Random Forest", f"${rf.predict(input_data)[0]:.2f}")
-        rcol3.metric("XGBoost", f"${xgb.predict(input_data)[0]:.2f}")
-        st.info(f"Distance: {dist:.2f} km")
+        try:
+            dist = haversine(pickup_lat, pickup_lon, dropoff_lat, dropoff_lon)
+
+            input_data = pd.DataFrame([[pickup_lat, pickup_lon, dropoff_lat, dropoff_lon,
+                                        passengers, dist, trip_hour, trip_day, trip_month]],
+                                      columns=features)
+
+            lr_fare = lr.predict(scaler.transform(input_data))[0]
+            rf_fare = rf.predict(input_data)[0]
+            xgb_fare = xgb.predict(input_data)[0]
+
+            st.success("Prediction done")
+            st.write("Distance (km):", round(dist, 2))
+            st.write("Linear Regression:", round(lr_fare, 2))
+            st.write("Random Forest:", round(rf_fare, 2))
+            st.write("XGBoost:", round(xgb_fare, 2))
+
+        except Exception as e:
+            st.error("Prediction failed")
+            st.write(e)
 
 else:
     st.info("Upload your uber.csv file to get started")
